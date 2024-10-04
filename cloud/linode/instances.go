@@ -43,7 +43,9 @@ func (nc *nodeCache) getInstanceAddresses(instance linodego.Instance, vpcips []s
 
 	for _, ip := range instanceIps.IPv4.VPC {
 		ipType := v1.NodeInternalIP
-		ips = append(ips, nodeIP{ip: *ip.Address, ipType: ipType})
+		if ip != nil {
+			ips = append(ips, nodeIP{ip: *ip.Address, ipType: ipType})
+		}
 	}
 
 	// If vpc ips are present, list them first
