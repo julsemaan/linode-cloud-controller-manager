@@ -10,7 +10,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/linode/linodego"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -40,8 +39,6 @@ type nodeCache struct {
 
 // getInstanceAddresses returns all addresses configured on a linode.
 func (nc *nodeCache) getInstanceAddresses(instance linodego.Instance, vpcips []string, instanceIps *linodego.InstanceIPAddressResponse) []nodeIP {
-	spew.Dump(instance)
-
 	ips := []nodeIP{}
 
 	for _, ip := range instanceIps.IPv4.VPC {
