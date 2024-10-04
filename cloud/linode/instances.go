@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/linode/linodego"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -38,8 +39,15 @@ type nodeCache struct {
 }
 
 // getInstanceAddresses returns all addresses configured on a linode.
-func (nc *nodeCache) getInstanceAddresses(instance linodego.Instance, vpcips []string) []nodeIP {
+func (nc *nodeCache) getInstanceAddresses(instance linodego.Instance, vpcips []string, instanceIps *linodego.InstanceIPAddressResponse) []nodeIP {
+	spew.Dump(instance)
+
 	ips := []nodeIP{}
+
+	for _, ip := range instanceIps.IPv4.VPC {
+		ipType := v1.NodeInternalIP
+		ips = append(ips, nodeIP{ip: *ip.Address, ipType: ipType})
+	}
 
 	// If vpc ips are present, list them first
 	for _, ip := range vpcips {
@@ -95,6 +103,10 @@ func (nc *nodeCache) refreshInstances(ctx context.Context, client client.Client)
 
 	newNodes := make(map[int]linodeInstance, len(instances))
 	for i, instance := range instances {
+		ips, err := client.GetInstanceIPAddresses(ctx, instance.ID)
+		if err != nil {
+			return err
+		}
 
 		// if running within VPC, only store instances in cache which are part of VPC
 		if vpcID != 0 && len(vpcNodes[instance.ID]) == 0 {
@@ -102,7 +114,7 @@ func (nc *nodeCache) refreshInstances(ctx context.Context, client client.Client)
 		}
 		node := linodeInstance{
 			instance: &instances[i],
-			ips:      nc.getInstanceAddresses(instance, vpcNodes[instance.ID]),
+			ips:      nc.getInstanceAddresses(instance, vpcNodes[instance.ID], ips),
 		}
 		newNodes[instance.ID] = node
 	}
