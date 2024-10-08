@@ -4,6 +4,7 @@ package client
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"net/http"
 	"os"
@@ -62,7 +63,11 @@ func New(token string, timeout time.Duration) (*linodego.Client, error) {
 	userAgent := fmt.Sprintf("linode-cloud-controller-manager %s", linodego.DefaultUserAgent)
 	apiURL := os.Getenv("LINODE_URL")
 
-	linodeClient := linodego.NewClient(&http.Client{Timeout: timeout})
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+
+	linodeClient := linodego.NewClient(&http.Client{Timeout: timeout, Transport: tr})
 	client, err := linodeClient.UseURL(apiURL)
 	if err != nil {
 		return nil, err
